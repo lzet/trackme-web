@@ -1,6 +1,6 @@
 ## TrackMe Web-server
 
-Web server for [trackme-mobile](https://bitbucket.org/Pozadi/myfin/wiki/Home) application
+Web server for [trackme-mobile](https://github.com/lzet/trackme-mobile) application
 
 #### To-do
 
