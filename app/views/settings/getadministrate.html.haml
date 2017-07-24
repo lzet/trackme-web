@@ -1,0 +1,35 @@
+= button_tag "X", type: :button, class: [:right, :closebutton], onclick: "buttonclose();"
+%table{:border => '1'}
+  %caption
+    Users
+  %tr
+    %th
+      Name
+    %th
+      Disabled
+    %th
+      Canmod
+    %th
+      Reset
+    %th
+      Delete
+  - User.all.each do |u|
+    %tr
+      %td
+        = u.login
+      %td
+        = link_to yesno(u.disabled), settings_getadministrate_path(u, disabled: !u.disabled), remote: true, method: :put
+      %td
+        = link_to yesno(u.canmodify), settings_getadministrate_path(u, canmodify: !u.canmodify), remote: true, method: :put
+      %td
+        = link_to yesno(u.reset), settings_getadministrate_path(u, reset: true), remote: true, method: :put
+      %td
+        = link_to 'x', settings_getadministrate_path(u, delete: true), remote: true, method: :put
+%br/
+= form_for('newuser', format: :html, url: settings_getadministrate_path, remote: true, html:{ method: :put}) do |f|
+  .field
+    = f.label :login, "Login"
+    %br/
+    = f.text_field :login, autocomplete: "off"
+  .actions
+    = f.submit "Add user"

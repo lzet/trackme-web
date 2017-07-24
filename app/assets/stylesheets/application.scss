@@ -1,0 +1,92 @@
+/*
+ * This is a manifest file that'll be compiled into application.css, which will include all the files
+ * listed below.
+ *
+ * Any CSS and SCSS file within this directory, lib/assets/stylesheets, or any plugin's
+ * vendor/assets/stylesheets directory can be referenced here using a relative path.
+ *
+ * You're free to add application-wide styles to this file and they'll appear at the bottom of the
+ * compiled file so the styles you add here take precedence over styles defined in any other CSS/SCSS
+ * files in this directory. Styles in this file should be added after the last require_* statement.
+ * It is generally better to create a new file per style scope.
+ *
+ *= require_tree .
+ *= require_self
+ *= require ol.css
+ *= require tcal.css
+ */
+@mixin button-style() {
+  text-decoration: none;
+  background-color: rgba(0,60,136,.5);
+  border-radius: 2px;
+  border: none;
+  padding: 2px 2px;
+  margin: 5px;
+  color: white;
+}
+body {
+  color: darkblue;
+  font-size: 12px;
+}
+button, input {
+  @include button-style();
+  padding: 5px 5px;
+  color: black;
+}
+input {
+  border: 1px solid;
+}
+.closebutton {
+  line-height: .4em;
+  margin: 0px;
+}
+a {
+  @include button-style();
+  font-weight: bold;
+}
+#login {
+  position: absolute; 
+  right: 10px;
+  text-align: left;
+  padding: 10px 0 0 0;
+  margin: 0;
+  z-index: 5000;
+  .login {
+    background-color: rgba(120,60,60,.5);
+  }
+  ul {
+    padding: 20px 0 0 0;
+    margin: 0;
+    li {
+      list-style: none;
+      margin: 10px 0;
+    }
+  }
+}
+#interval, #name, #settings {
+  z-index: 8000;
+  position: absolute;
+  top: 50px;
+  right: 115px;
+  background-color: rgba(127,127,127,0.5);
+  padding: 10px;
+  border-radius: 5px;
+  .field {
+    label, input {
+      border-radius: 0;
+      font-size: 12px;
+      max-width: 100%;
+      display: inline-block;
+      position: inherit;
+      width: 87%;
+    }
+  }
+}
+.hide {
+  display: none;
+}
+.right {
+  position: absolute;
+  right: 5%;
+  top: 3%;
+}

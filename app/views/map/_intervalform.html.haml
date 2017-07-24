@@ -1,0 +1,10 @@
+= button_tag "X", type: :button, class: [:right, :closebutton], onclick: "buttonclose();"
+.field
+  = label_tag :from
+  = text_field_tag :from, "", class: :tcal, required: true, pattern: '\d{2}/\d{2}/\d{4}', placeholder: 'dd/mm/yyyy', autofocus: true
+
+.field
+  = label_tag :to
+  = text_field_tag :to, "", class: :tcal, required: true, pattern: '\d{2}/\d{2}/\d{4}', placeholder: 'dd/mm/yyyy'
+.action
+  = button_tag "Get it", id: :getinterval

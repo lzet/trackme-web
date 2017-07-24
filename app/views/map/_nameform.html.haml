@@ -1,0 +1,6 @@
+= button_tag "X", type: :button, class: [:right, :closebutton], onclick: "buttonclose();"
+.field
+  = label_tag :trackname
+  = text_field_tag :trackname, "", required: true, pattern: '.+', autofocus: true
+.action
+  = button_tag "Get it", id: :getname

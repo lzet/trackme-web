@@ -1,0 +1,19 @@
+- if user_signed_in?
+  = link_to "#{current_user.login} logout", destroy_user_session_path(current_user), method: :delete, title: 'logout', class: :login
+  - if current_user.admin?
+    %br/
+    %br/
+    = link_to "administrate", settings_getadministrate_path, class: :login, remote: true
+  - if current_user.canmodify?
+    %br/
+    %br/
+    = link_to "settings", settings_getsettings_path, class: :login, remote: true
+  #period
+    %ul
+      %li= link_to "prev. day", root_path(previous: 'day'), id: 'day', class: :getprevious, onclick: 'return false;'
+      %li= link_to "prev. week", root_path(previous: 'week'), id: 'week', class: :getprevious, onclick: 'return false;'
+      %li= link_to "prev. month", root_path(previous: 'month'), id:'month', class: :getprevious, onclick: 'return false;'
+      %li= link_to "prev. interval", root_path(previous: 'interval'), onclick: 'return false;', id: :showbutton1
+      %li= link_to "by track name", root_path(previous: 'name'), onclick: 'return false;', id: :showbutton2
+      /%li= link_to "current GPX", '#'
+

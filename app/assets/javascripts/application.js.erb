@@ -1,0 +1,249 @@
+// This is a manifest file that'll be compiled into application.js, which will include all the files
+// listed below.
+//
+// Any JavaScript/Coffee file within this directory, lib/assets/javascripts, or any plugin's
+// vendor/assets/javascripts directory can be referenced here using a relative path.
+//
+// It's not advisable to add code directly here, but if you do, it'll appear at the bottom of the
+// compiled file. JavaScript code in this file should be added after the last require_* statement.
+//
+// Read Sprockets README (https://github.com/rails/sprockets#sprockets-directives) for details
+// about supported directives.
+//
+//= require ol.js
+//= require tcal.js
+//= require rails-ujs
+//= require turbolinks
+//= require_tree .
+window.addEventListener( 'turbolinks:load', function( event ) {
+  var lastval = -1;
+  var lastsession = -1;
+  var lastpoint = null;
+  var signin = (document.getElementsByClassName('login').length > 0);
+
+  var style = {
+    'Point': new ol.style.Style({
+      image: new ol.style.Circle({
+        fill: new ol.style.Fill({
+          color: 'rgba(255,25,0,0.5)'
+        }),
+        radius: 5,
+        stroke: new ol.style.Stroke({
+          color: '#f00',
+          width: 1
+        })
+      })
+    }),
+    'LineString': new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: '#f00',
+        width: 2
+      })
+    }),
+    'MultiLineString': new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: '#0f0',
+        width: 3
+      })
+    })
+  };
+
+  var stylefunc = function(feature) {
+                    return style[feature.getGeometry().getType()];
+                  };
+  var styletext = function(pname) {
+                    return new ol.style.Style({
+                      image: new ol.style.Circle({
+                        fill: new ol.style.Fill({
+                          color: 'rgba(0,200,0,0.5)'
+                        }),
+                        radius: 8,
+                        stroke: new ol.style.Stroke({
+                          color: '#007f00',
+                          width: 1
+                        })
+                      }),
+                      text: new ol.style.Text({
+                        font: '14px Calibri,sans-serif',
+                        fill: new ol.style.Fill({ color: '#00f' }),
+                        stroke: new ol.style.Stroke({
+                          color: '#fff', width: 2
+                        }),
+                        text: pname
+                      })
+                    });
+                  };
+  var curpoint = null;
+
+  
+  var raster = new ol.layer.Tile({
+    source: new ol.source.OSM()
+  });
+  
+  var source = new ol.source.Vector({wrapX: false});
+  var route = new ol.source.Vector({wrapX: false});
+  
+  var vector = new ol.layer.Vector({
+    style:  stylefunc,
+    source: source
+  });
+  var multiline = new ol.layer.Vector({
+    style:  stylefunc,
+    source: route
+  });
+  
+  var map = new ol.Map({
+    layers: [raster, vector, multiline],
+    target: 'basicMap',
+    view: new ol.View({
+      center: [-11000000, 4600000],
+      zoom: 3
+    })
+  });
+
+  function addMarkers(result, periodic) {
+    if(!periodic) {
+      source.clear();
+      route.clear();
+    }
+    var needextent = lastsession < 0;
+    var newdata = lastval < 0;
+    result.forEach(function(point, i, result) {
+      var pnt = ol.proj.transform(
+        [
+          parseFloat(point["longitude"]), 
+          parseFloat(point["latitude"])
+        ],
+        'EPSG:4326',
+        'EPSG:3857'
+      );
+      var session = point["session"];
+      if(session !== lastsession) lastpoint = null;
+      var fea = new ol.Feature({geometry: new ol.geom.Point(pnt)});
+      if(lastpoint != null) {
+        route.addFeature(new ol.Feature({geometry: new ol.geom.LineString([lastpoint, pnt])}));
+      } else {
+        fea.setStyle(styletext(point["name"]));
+      }
+      source.addFeature(fea);
+      lastpoint = pnt;
+      lastsession = session;
+      if(periodic) lastval = point["id"];
+      return;
+    });
+    if(!periodic) {
+      map.getView().fit(source.getExtent());
+    } else if(lastpoint && result.length > 0) {
+      if(newdata && lastval >=0) map.getView().setZoom(15);       
+      map.getView().setCenter(lastpoint);
+      if(curpoint == null) {
+        curpoint = new ol.Feature({geometry: new ol.geom.Point(lastpoint)});
+        curpoint.setStyle(new ol.style.Style({
+          image: new ol.style.Icon({
+            anchor: [0.5, 1.0],
+            size: [13, 24],
+            offset: [0, 0],
+            opacity: 1,
+            scale: 1,
+            src: "<%= asset_path('me.png') %>"
+          })
+        }));
+        source.addFeature(curpoint);
+      } else {
+        curpoint.setGeometry(new ol.geom.Point(lastpoint));
+      }
+    }
+  }
+
+  if(!signin) return;
+  
+  function getDataAjx(interval) {
+    var periodic = true;
+    if(interval != null)
+      periodic = false;
+    var r = new XMLHttpRequest();
+    r.open("POST", "/getdata", true);
+    r.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+    r.onreadystatechange = function () {
+      if (r.readyState != 4 || r.status != 200) return;
+      if(!periodic) { lastsession = -1; }
+      var result = JSON.parse(r.responseText);
+      addMarkers(result, periodic);
+      if(periodic) setTimeout(getDataAjx, 30000);
+    };
+    if(periodic) {
+      r.send("{\"lastval\":\""+lastval+"\"}");
+    } else {
+      if(interval === 'name') {
+        r.send("{\"nameform\":\""+document.getElementById('trackname').value+"\"}");
+        buttonclose();
+      } else if(interval === 'interval') {
+        r.send("{\"from\":\""+document.getElementById('from').value+"\", \"to\":\""+document.getElementById('to').value+"\"}");
+        buttonclose();
+      } else {
+        r.send("{\"interval\":\""+interval+"\"}");
+      }
+    }
+  }
+  setTimeout(getDataAjx, 1000);
+
+  document.getElementById('getname').addEventListener("click", function() {
+    var el = document.getElementById('trackname');
+    if(el.value.match(el.pattern)) {
+      getDataAjx('name');
+    }
+  });
+  document.getElementById('getinterval').addEventListener("click", function() {
+    var el1 = document.getElementById('from');
+    var el2 = document.getElementById('to');
+    if(el1.value.match(el1.pattern) && el2.value.match(el2.pattern)) {
+      getDataAjx('interval');
+    }
+  });
+  var elements = document.getElementsByClassName('getprevious');
+  for(var i = 0; i < elements.length; ++i) {
+    elements[i].addEventListener("click", function() {
+      buttonclose();
+      getDataAjx(this.id);
+    });
+  }
+  document.getElementById('showbutton1').addEventListener("click", function() {
+    buttonclose();
+    document.getElementById('interval').className = 'show';
+  });
+  document.getElementById('showbutton2').addEventListener("click", function() {
+    buttonclose();
+    document.getElementById('name').className = 'show';
+  });
+  document.getElementById('basicMap').addEventListener("click", function() {
+    var el = document.getElementById('tcal');
+    if(el) {
+      el.parentNode.removeChild(el);
+    } else {
+      buttonclose();
+    }
+  });
+  A_TCALCONF['format'] = 'd/m/Y';
+  A_TCALCONF['weekstart'] = 1;
+  document.body.addEventListener('ajax:success', function(event) {
+    var data = event.detail[0];
+    if(data === "close") {
+      buttonclose();
+    } else {
+      var el = document.getElementById('settings');
+      el.className = 'show';
+      el.innerHTML = data.documentElement.innerHTML;
+    }
+  })
+});
+
+function buttonclose() {
+  document.getElementById('interval').className = 'hide';
+  document.getElementById('name').className = 'hide';
+  var el = document.getElementById('tcal');
+  if(el) el.parentNode.removeChild(el);
+  document.getElementById('settings').className = 'hide';
+  return false;
+}
+
+
